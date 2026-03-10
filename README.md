@@ -52,6 +52,7 @@ EduGuard is a comprehensive parental control system for Linux (Edubuntu/Ubuntu) 
 |----------|-------------|
 | **[INSTALL.md](INSTALL.md)** | Complete installation and setup guide |
 | **[USER_GUIDE.md](USER_GUIDE.md)** | How-to guide for parents using EduGuard |
+| **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** | Command cheat sheet for common tasks |
 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | Technical documentation for developers |
 | **[OLLAMA_MIGRATION.md](OLLAMA_MIGRATION.md)** | Guide for AI model setup and switching |
 
