@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}AI Insights - EduGuard{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 2rem;">AI Insights</h1>
+
+{% if insights %}
+    {% for insight in insights %}
+    <div class="card">
+        <h3>{{ insight['insight_type'].replace('_', ' ').title() }}</h3>
+        <p style="line-height: 1.6; margin: 1rem 0;">{{ insight['summary'] }}</p>
+        <small style="color: #7f8c8d;">Generated: {{ insight['generated_at'] }}</small>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="card">
+    <p>No AI insights generated yet. Insights are generated daily at 8 PM.</p>
+</div>
+{% endif %}
+{% endblock %}

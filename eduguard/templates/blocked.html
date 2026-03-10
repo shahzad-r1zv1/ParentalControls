@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Blocked Attempts - EduGuard{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 2rem;">Blocked Attempts</h1>
+
+<div class="card">
+    {% if attempts %}
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Domain</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attempt in attempts %}
+            <tr>
+                <td>{{ attempt['timestamp'][:16] }}</td>
+                <td>{{ attempt['domain'] }}</td>
+                <td>{{ attempt['reason'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No blocked attempts recorded.</p>
+    {% endif %}
+</div>
+{% endblock %}

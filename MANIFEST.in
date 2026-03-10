@@ -1,0 +1,9 @@
+include README.md
+include INSTALL.md
+include LICENSE
+include requirements.txt
+include eduguard.service
+include blocklist.txt
+recursive-include eduguard/templates *
+recursive-include eduguard/static *
+recursive-include eduguard/config *.yaml

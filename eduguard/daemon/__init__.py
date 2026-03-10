@@ -1,0 +1,3 @@
+"""
+EduGuard daemon package
+"""

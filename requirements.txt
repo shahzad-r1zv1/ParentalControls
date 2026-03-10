@@ -1,0 +1,20 @@
+# EduGuard Parental Control System
+
+## Core Dependencies
+psutil>=5.9.0
+APScheduler>=3.10.0
+PyYAML>=6.0
+anthropic>=0.18.0
+
+## Flask Dashboard
+Flask>=3.0.0
+Flask-WTF>=1.2.0
+Werkzeug>=3.0.0
+
+## Database
+# Uses built-in sqlite3
+
+## System Integration
+# Requires system packages:
+# - dnsmasq (apt install dnsmasq)
+# - systemd (pre-installed on Edubuntu)

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Browsing History - EduGuard{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 2rem;">Browsing History</h1>
+
+<div class="card">
+    <div style="margin-bottom: 1rem;">
+        <a href="{{ url_for('history', days=1) }}" class="btn">Today</a>
+        <a href="{{ url_for('history', days=7) }}" class="btn">Last 7 Days</a>
+        <a href="{{ url_for('history', days=30) }}" class="btn">Last 30 Days</a>
+    </div>
+
+    {% if visits %}
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Title</th>
+                <th>URL</th>
+                <th>Visits</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for visit in visits %}
+            <tr>
+                <td>{{ visit['visit_time'][:16] }}</td>
+                <td>{{ visit['title'][:50] if visit['title'] else 'N/A' }}</td>
+                <td>{{ visit['url'][:60] }}</td>
+                <td>{{ visit['visit_count'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No browsing history found for this period.</p>
+    {% endif %}
+</div>
+{% endblock %}
