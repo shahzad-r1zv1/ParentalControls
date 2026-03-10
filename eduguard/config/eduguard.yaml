@@ -1,0 +1,42 @@
+# EduGuard Configuration File
+
+# Database settings
+database:
+  path: /var/lib/eduguard/eduguard.db
+
+# Screen time limits (in minutes)
+limits:
+  daily_screen_time: 120  # 2 hours per day
+
+# Browser monitoring
+browser:
+  firefox_profile_path: ~/.mozilla/firefox
+  check_interval: 300  # 5 minutes
+
+# DNS and content filtering
+dns:
+  port: 53
+  blocklist_path: /etc/eduguard/blocklist.txt
+  dnsmasq_config: /etc/dnsmasq.d/eduguard.conf
+
+# AI classifier settings
+ai:
+  model: llama3.2:3b  # Small local model (Llama 3.2 3B, Mistral 7B, etc.)
+  ollama_host: http://localhost:11434  # Ollama API endpoint
+  batch_interval: 86400  # 24 hours (nightly)
+  confidence_threshold: 0.7
+
+# Time tracking
+tracking:
+  poll_interval: 60  # 1 minute
+
+# Dashboard settings
+dashboard:
+  host: 127.0.0.1
+  port: 5000
+  secret_key: ""  # Set via environment variable FLASK_SECRET_KEY
+
+# Logging
+logging:
+  level: INFO
+  file: /var/log/eduguard/eduguard.log

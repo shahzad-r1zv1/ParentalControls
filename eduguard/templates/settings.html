@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - EduGuard{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 2rem;">Settings</h1>
+
+<div class="card">
+    <h2>Screen Time Limits</h2>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="form-group">
+            <label for="daily_limit">Daily Screen Time Limit (minutes)</label>
+            <input type="number" id="daily_limit" name="daily_limit"
+                   value="{{ config.limits.daily_screen_time }}" min="0" max="1440">
+        </div>
+        <button type="submit" class="btn">Save Settings</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Current Configuration</h2>
+    <table>
+        <tr>
+            <th>Setting</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Database Path</td>
+            <td>{{ config.database.path }}</td>
+        </tr>
+        <tr>
+            <td>Time Tracking Interval</td>
+            <td>{{ config.tracking.poll_interval }}s</td>
+        </tr>
+        <tr>
+            <td>Browser Check Interval</td>
+            <td>{{ config.browser.check_interval }}s</td>
+        </tr>
+        <tr>
+            <td>AI Model</td>
+            <td>{{ config.ai.model }}</td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

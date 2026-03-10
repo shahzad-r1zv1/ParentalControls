@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Login - EduGuard{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 400px; margin: 4rem auto;">
+    <h2 style="text-align: center; margin-bottom: 2rem;">Parent Login</h2>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">Login</button>
+    </form>
+</div>
+{% endblock %}

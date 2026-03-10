@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - EduGuard{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 2rem;">Activity Reports</h1>
+
+<div class="card">
+    <h2>Daily Screen Time (Last 7 Days)</h2>
+    {% if daily_usage %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Minutes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for day in daily_usage %}
+            <tr>
+                <td>{{ day['date'] }}</td>
+                <td>{{ day['minutes'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No usage data for the last 7 days.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Most Visited Sites (Last 7 Days)</h2>
+    {% if top_sites_week %}
+    <table>
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Visits</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for site in top_sites_week %}
+            <tr>
+                <td>{{ site['url'][:80] }}</td>
+                <td>{{ site['visits'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No browsing activity in the last 7 days.</p>
+    {% endif %}
+</div>
+{% endblock %}

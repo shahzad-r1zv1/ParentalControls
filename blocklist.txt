@@ -1,0 +1,24 @@
+# Default blocklist for EduGuard
+# One domain per line, comments start with #
+
+# Adult content
+pornhub.com
+xvideos.com
+xnxx.com
+
+# Social media (unrestricted)
+facebook.com
+instagram.com
+snapchat.com
+tiktok.com
+
+# Gambling
+bet365.com
+888casino.com
+
+# Violence/weapons
+4chan.org
+8kun.top
+
+# Malware/phishing known domains
+# Add suspicious domains here

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EduGuard{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 2rem;">Dashboard</h1>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Screen Time Today</div>
+        <div class="stat-value">{{ stats.screen_time_minutes }}m</div>
+        <div class="stat-label">Limit: {{ stats.screen_time_limit }}m</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Blocked Today</div>
+        <div class="stat-value">{{ stats.blocked_today }}</div>
+    </div>
+</div>
+
+{% if stats.latest_insight %}
+<div class="card">
+    <h2>Latest AI Insight</h2>
+    <p style="line-height: 1.6;">{{ stats.latest_insight['summary'] }}</p>
+    <small style="color: #7f8c8d;">Generated: {{ stats.latest_insight['generated_at'] }}</small>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Top Visited Sites Today</h2>
+    {% if stats.top_sites %}
+    <table>
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Visits</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for site in stats.top_sites %}
+            <tr>
+                <td>{{ site['url'][:80] }}</td>
+                <td>{{ site['visits'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No browsing activity today.</p>
+    {% endif %}
+</div>
+{% endblock %}
