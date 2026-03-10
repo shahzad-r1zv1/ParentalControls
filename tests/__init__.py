@@ -1,0 +1,3 @@
+"""
+EduGuard test suite
+"""
