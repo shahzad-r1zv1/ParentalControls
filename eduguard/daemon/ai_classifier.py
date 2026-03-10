@@ -1,32 +1,41 @@
 """
-AI classifier module - uses Claude API for content classification
+AI classifier module - uses local LLM via Ollama for content classification
 """
 import logging
 import os
 from typing import Dict, Optional
 from datetime import datetime
-import anthropic
+import ollama
+import json
 
 logger = logging.getLogger(__name__)
 
 
 class AIClassifier:
-    """Uses Claude API to classify website content"""
+    """Uses local LLM via Ollama to classify website content"""
 
     def __init__(self, database, config):
         self.db = database
         self.config = config
-        self.api_key = os.environ.get('ANTHROPIC_API_KEY', config['ai'].get('api_key', ''))
         self.model = config['ai']['model']
         self.confidence_threshold = config['ai']['confidence_threshold']
+        self.ollama_host = config['ai'].get('ollama_host', 'http://localhost:11434')
         self.client = None
-        if self.api_key:
-            self.client = anthropic.Anthropic(api_key=self.api_key)
+
+        # Initialize Ollama client
+        try:
+            # Test connection by checking available models
+            self.client = ollama.Client(host=self.ollama_host)
+            models = self.client.list()
+            logger.info(f"Connected to Ollama at {self.ollama_host}, available models: {len(models.get('models', []))}")
+        except Exception as e:
+            logger.warning(f"Could not connect to Ollama at {self.ollama_host}: {e}")
+            logger.warning("AI classification features will be disabled")
 
     def classify_batch(self, domains: list) -> Dict[str, Dict]:
-        """Classify a batch of domains using Claude API"""
+        """Classify a batch of domains using local LLM"""
         if not self.client:
-            logger.warning("Claude API key not configured")
+            logger.warning("Ollama client not initialized")
             return {}
 
         results = {}
@@ -67,29 +76,58 @@ Consider:
 - Age-appropriate entertainment: ALLOW
 - Social media (unrestricted): BLOCK
 - Adult content, violence, gambling: BLOCK
-- Unknown/suspicious domains: BLOCK (better safe than sorry)"""
+- Unknown/suspicious domains: BLOCK (better safe than sorry)
 
-            message = self.client.messages.create(
+Return only the JSON object, no additional text."""
+
+            # Call Ollama API
+            response = self.client.chat(
                 model=self.model,
-                max_tokens=256,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[
+                    {
+                        'role': 'user',
+                        'content': prompt
+                    }
+                ],
+                options={
+                    'temperature': 0.3,  # Lower temperature for more consistent decisions
+                    'num_predict': 256,  # Max tokens
+                }
             )
 
-            # Parse response
-            response_text = message.content[0].text
-            # Simple parsing (in production, use proper JSON parsing)
-            decision = 'block'
-            reason = 'AI classification'
-            confidence = 0.8
+            response_text = response['message']['content']
 
-            if 'allow' in response_text.lower():
-                decision = 'allow'
-            if 'reason' in response_text.lower():
-                lines = response_text.split('\n')
-                for line in lines:
-                    if 'reason' in line.lower():
-                        reason = line.split(':', 1)[1].strip().strip('"\'')
-                        break
+            # Try to parse JSON response
+            try:
+                # Clean up response text - remove markdown code blocks if present
+                cleaned_response = response_text.strip()
+                if cleaned_response.startswith('```'):
+                    lines = cleaned_response.split('\n')
+                    cleaned_response = '\n'.join(lines[1:-1])
+                if cleaned_response.startswith('json'):
+                    cleaned_response = cleaned_response[4:].strip()
+
+                result = json.loads(cleaned_response)
+                decision = result.get('decision', 'block')
+                reason = result.get('reason', 'AI classification')
+                confidence = float(result.get('confidence', 0.8))
+            except (json.JSONDecodeError, ValueError) as e:
+                # Fallback to simple parsing if JSON parsing fails
+                logger.warning(f"Could not parse JSON response for {domain}, using fallback: {e}")
+                decision = 'block'
+                reason = 'AI classification'
+                confidence = 0.8
+
+                if 'allow' in response_text.lower():
+                    decision = 'allow'
+                if 'reason' in response_text.lower():
+                    lines = response_text.split('\n')
+                    for line in lines:
+                        if 'reason' in line.lower():
+                            parts = line.split(':', 1)
+                            if len(parts) > 1:
+                                reason = parts[1].strip().strip('"\'')
+                            break
 
             return {
                 'decision': decision,
@@ -137,7 +175,7 @@ Consider:
     def generate_daily_insights(self):
         """Generate AI-powered daily activity summary"""
         if not self.client:
-            logger.warning("Claude API key not configured")
+            logger.warning("Ollama client not initialized")
             return
 
         try:
@@ -172,7 +210,7 @@ Consider:
                 """)
                 blocked_count = cursor.fetchone()['count']
 
-            # Generate insight using Claude
+            # Generate insight using local LLM
             activity_summary = f"""Screen time: {screen_time // 60} minutes
 Top visited sites: {', '.join([row['url'] for row in top_sites[:5]])}
 Blocked attempts: {blocked_count}"""
@@ -183,13 +221,22 @@ Blocked attempts: {blocked_count}"""
 
 Keep it concise (2-3 sentences) and constructive."""
 
-            message = self.client.messages.create(
+            # Call Ollama API
+            response = self.client.chat(
                 model=self.model,
-                max_tokens=256,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[
+                    {
+                        'role': 'user',
+                        'content': prompt
+                    }
+                ],
+                options={
+                    'temperature': 0.7,
+                    'num_predict': 256,
+                }
             )
 
-            insight = message.content[0].text
+            insight = response['message']['content']
 
             # Save insight
             with self.db.get_connection() as conn:

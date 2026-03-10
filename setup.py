@@ -22,7 +22,7 @@ setup(
         "psutil>=5.9.0",
         "APScheduler>=3.10.0",
         "PyYAML>=6.0",
-        "anthropic>=0.18.0",
+        "ollama>=0.3.0",
         "Flask>=3.0.0",
         "Flask-WTF>=1.2.0",
         "Werkzeug>=3.0.0",

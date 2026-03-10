@@ -2,7 +2,7 @@
 
 ![EduGuard Logo](https://via.placeholder.com/150x50?text=EduGuard)
 
-EduGuard is a comprehensive parental control system designed for Edubuntu that enforces daily screen time limits, blocks age-inappropriate websites, and provides AI-powered activity reports through a local web dashboard.
+EduGuard is a comprehensive parental control system designed for Edubuntu that enforces daily screen time limits, blocks age-inappropriate websites, and provides AI-powered activity reports through a local web dashboard using a local LLM.
 
 ## Features
 
@@ -11,20 +11,22 @@ EduGuard is a comprehensive parental control system designed for Edubuntu that e
 - **Automatic Enforcement**: Locks user session when daily limits are exceeded
 - **Browser Monitoring**: Tracks Firefox browsing history and visited sites
 - **DNS-Based Content Filtering**: Blocks inappropriate domains via dnsmasq integration
-- **AI-Powered Classification**: Uses Claude API to intelligently classify unknown domains
+- **AI-Powered Classification**: Uses local LLM via Ollama to intelligently classify unknown domains
 - **Parental Dashboard**: Web-based interface for monitoring and configuration
 
 ### AI Integration
-- Smart content classification beyond static blocklists
+- Smart content classification beyond static blocklists using local LLM
 - Natural-language behavior summaries for parents
 - Daily activity insights and pattern detection
 - Automatic batch processing of unclassified domains
+- **Privacy-focused**: All AI processing happens locally, no data sent to external APIs
+- **No API costs**: Free, unlimited usage
 
 ## Architecture
 
 ```
 Child's Firefox → dnsmasq (port 53) → static blocklist OR AI classifier cache
-                                    → unknown domain queue → Claude API (nightly batch)
+                                    → unknown domain queue → Local LLM via Ollama (nightly batch)
 
 EduGuard Daemon (root, systemd)
   ├── time_tracker    polls psutil every 60s, writes to SQLite
@@ -47,17 +49,37 @@ Flask Dashboard (127.0.0.1:5000, parent only, Flask-WTF CSRF)
   - systemd
   - Firefox browser
   - loginctl
+  - Ollama with a small local LLM (Llama 3.2 3B, Mistral 7B, etc.)
 
 ## Installation
 
-### 1. Install System Dependencies
+### 1. Install Ollama and Download a Model
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Start Ollama service
+sudo systemctl start ollama
+
+# Download a small model (Llama 3.2 3B is recommended)
+ollama pull llama3.2:3b
+
+# Alternative: Use Mistral 7B (larger, more accurate but slower)
+# ollama pull mistral:7b
+
+# Verify model is downloaded
+ollama list
+```
+
+### 2. Install System Dependencies
 
 ```bash
 sudo apt update
 sudo apt install -y dnsmasq python3-pip python3-venv
 ```
 
-### 2. Install EduGuard
+### 3. Install EduGuard
 
 ```bash
 # Clone or download the repository
@@ -70,7 +92,7 @@ sudo python3 -m venv venv
 sudo ./venv/bin/pip install -e .
 ```
 
-### 3. Configure System Directories
+### 4. Configure System Directories
 
 ```bash
 # Create required directories
@@ -88,7 +110,7 @@ sudo chmod 755 /var/log/eduguard
 sudo chmod 755 /etc/eduguard
 ```
 
-### 4. Configure dnsmasq
+### 5. Configure dnsmasq
 
 ```bash
 # Create eduguard dnsmasq configuration
@@ -99,13 +121,12 @@ sudo systemctl enable dnsmasq
 sudo systemctl start dnsmasq
 ```
 
-### 5. Set Environment Variables
+### 6. Set Environment Variables
 
 ```bash
-# Set up API key and secret
+# Set up Flask secret key and parent password
 sudo mkdir -p /etc/eduguard/env
 sudo bash -c 'cat > /etc/eduguard/env/eduguard.env << EOF
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
 FLASK_SECRET_KEY=$(openssl rand -hex 32)
 PARENT_PASSWORD_HASH=$(python3 -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('parent123'))")
 EOF'
@@ -114,7 +135,7 @@ EOF'
 sudo chmod 600 /etc/eduguard/env/eduguard.env
 ```
 
-### 6. Install systemd Service
+### 7. Install systemd Service
 
 ```bash
 # Copy service file
@@ -131,9 +152,12 @@ sudo systemctl enable eduguard
 sudo systemctl start eduguard
 ```
 
-### 7. Verify Installation
+### 8. Verify Installation
 
 ```bash
+# Check Ollama is running
+sudo systemctl status ollama
+
 # Check daemon status
 sudo systemctl status eduguard
 
@@ -172,7 +196,8 @@ dns:
 
 # AI classifier settings
 ai:
-  model: claude-sonnet-4-6
+  model: llama3.2:3b  # Small local model (or mistral:7b for more accuracy)
+  ollama_host: http://localhost:11434  # Ollama API endpoint
   batch_interval: 86400  # 24 hours (nightly)
   confidence_threshold: 0.7
 
@@ -284,10 +309,101 @@ The system uses SQLite with the following tables:
 2. **Local Access Only**: Dashboard is bound to 127.0.0.1 (localhost)
 3. **CSRF Protection**: Flask-WTF provides CSRF protection
 4. **Password Protected**: Dashboard requires parent password
-5. **Secure Environment**: API keys stored in protected environment file
+5. **Privacy-First AI**: All AI processing happens locally via Ollama, no data sent to external APIs
 6. **SQLite WAL Mode**: Prevents database lock conflicts
 
+## Local LLM Models
+
+### Recommended Models
+
+**Llama 3.2 3B** (Default, Recommended)
+- Size: ~2GB
+- Speed: Very fast
+- Accuracy: Good for content classification
+- Installation: `ollama pull llama3.2:3b`
+
+**Mistral 7B**
+- Size: ~4.1GB
+- Speed: Moderate
+- Accuracy: Excellent for nuanced decisions
+- Installation: `ollama pull mistral:7b`
+
+**Qwen2.5 3B**
+- Size: ~2GB
+- Speed: Very fast
+- Accuracy: Good alternative to Llama
+- Installation: `ollama pull qwen2.5:3b`
+
+### Changing Models
+
+Edit `/etc/eduguard/eduguard.yaml`:
+
+```yaml
+ai:
+  model: mistral:7b  # Change to your preferred model
+```
+
+Then reload the daemon:
+```bash
+sudo systemctl reload eduguard
+```
+
 ## Troubleshooting
+
+### Ollama Not Running
+
+```bash
+# Check Ollama status
+sudo systemctl status ollama
+
+# Start Ollama if stopped
+sudo systemctl start ollama
+sudo systemctl enable ollama
+
+# Test Ollama connection
+curl http://localhost:11434/api/tags
+
+# View Ollama logs
+sudo journalctl -u ollama -n 50
+```
+
+### AI Classification Not Working
+
+```bash
+# Check if model is downloaded
+ollama list
+
+# Download model if missing
+ollama pull llama3.2:3b
+
+# Check Ollama connection in EduGuard logs
+sudo grep -i "ollama" /var/log/eduguard/eduguard.log
+
+# Check AI job logs
+sudo sqlite3 /var/lib/eduguard/eduguard.db "SELECT * FROM job_runs WHERE job_name='ai_batch' ORDER BY started_at DESC LIMIT 5;"
+
+# Test Ollama manually
+ollama run llama3.2:3b "Is example.com appropriate for children?"
+```
+
+### Model Too Slow
+
+If your model is too slow, try a smaller model:
+
+```bash
+# Switch to a smaller model
+ollama pull llama3.2:3b
+
+# Or use an even smaller model
+ollama pull tinyllama:1.1b  # Only 637MB
+
+# Update config
+sudo nano /etc/eduguard/eduguard.yaml
+# Change model to: tinyllama:1.1b
+
+# Reload daemon
+sudo systemctl reload eduguard
+```
 
 ### Daemon Won't Start
 
@@ -301,6 +417,9 @@ ls -la /var/log/eduguard
 
 # Verify Python dependencies
 /opt/eduguard/venv/bin/pip list
+
+# Check if ollama library is installed
+/opt/eduguard/venv/bin/pip show ollama
 ```
 
 ### Browser History Not Updating
@@ -324,16 +443,6 @@ cat /etc/dnsmasq.d/eduguard.conf
 
 # Test DNS resolution
 nslookup blocked-domain.com
-```
-
-### AI Classification Not Working
-
-```bash
-# Check API key
-sudo grep ANTHROPIC_API_KEY /etc/eduguard/env/eduguard.env
-
-# Check AI job logs
-sudo sqlite3 /var/lib/eduguard/eduguard.db "SELECT * FROM job_runs WHERE job_name='ai_batch' ORDER BY started_at DESC LIMIT 5;"
 ```
 
 ## Uninstallation

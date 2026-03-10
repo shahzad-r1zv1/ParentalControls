@@ -6,7 +6,6 @@ After=network.target dnsmasq.service
 Type=simple
 User=root
 Group=root
-Environment="ANTHROPIC_API_KEY="
 Environment="FLASK_SECRET_KEY="
 ExecStart=/usr/bin/python3 -m eduguard.daemon.daemon
 Restart=always
